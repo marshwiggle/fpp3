@@ -1,5 +1,7 @@
 library(tsibble)
 library(fpp3)
+library(seasonal)
+
 
 # 3.1 Transformations and adjustments
 
@@ -137,3 +139,65 @@ us_retail_employmnet_ma |>
   geom_line(aes(y = `2x12-MA`), colour = "#D55E00") +
   labs(y = "Persons (thousands)",
        title = "Total employment in US retail")
+
+
+
+# 3.4 Classical decomposition ---------------------------------------------
+
+
+us_retail_employment |>
+  model(
+    classical_decomposition(Employed, type = "additive")
+  ) |>
+  components() |>
+  autoplot() +
+  labs(title = "Classical additive decomposition of total US retail employment")
+
+
+
+# 3.5 Methods used by official statistics agencies ------------------------
+
+
+x11_dcmp <- us_retail_employment |>
+  model(x11 = X_13ARIMA_SEATS(Employed ~ x11())) |>
+  components()
+
+autoplot(x11_dcmp) +
+  labs(title = "Decomposition of total US retail employment using X-11")
+
+x11_dcmp |>
+  ggplot(aes(x = Month)) +
+  geom_line(aes(y = Employed, colour = "Data")) +
+  geom_line(aes(y = season_adjust,
+                colour = "Seasonally Adjusted")) +
+  geom_line(aes(y = trend, colour = "Trend")) +
+  labs(y = "Persons (thousands)",
+       title = "Total employment in US retail") +
+  scale_colour_manual(
+    values = c("gray", "#0072B2", "#D55E00"),
+    breaks = c("Data", "Seasonally Adjusted", "Trend")
+  )
+
+
+x11_dcmp |>
+  gg_subseries(seasonal)
+
+seats_dcmp <- us_retail_employment |>
+  model(seats = X_13ARIMA_SEATS(Employed ~ seats())) |>
+  components()
+
+autoplot(seats_dcmp) +
+  labs(title = "Decomposition of total US retail employment using SEATS")
+
+
+
+# 3.6 STL decomposition ---------------------------------------------------
+
+
+us_retail_employment |>
+  model(
+    STL(Employed ~ trend(window = 7) +
+          season(window = "periodic"),
+        robust = TRUE)) |>
+  components() |>
+  autoplot()

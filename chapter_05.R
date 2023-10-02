@@ -335,3 +335,21 @@ google_fc |>
 google_2015_tr <- google_2015 |>
   stretch_tsibble(.init = 3, .step = 1) |>
   relocate(Date, Symbol, .id)
+
+google_2015_tr
+
+
+# Time series cross-validation accuracy
+google_2015_tr |>
+  model(RW(Close ~ drift())) |>
+  forecast(h = 1) |>
+  accuracy(google_2015)
+
+# Traingin set accuracy
+google_2015 |>
+  model(RW(Close ~ drift()))  |>
+  accuracy()
+
+
+# Example: Forecast horizon accuracy with cross-avlidation
+

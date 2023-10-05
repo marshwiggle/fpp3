@@ -134,3 +134,53 @@ augment(fit_beer) |>
        title = "Australian quaterly beer production") +
   geom_abline(intercept = 0, slope = 1) +
   guides(colour = guide_legend(title = "Quarter"))
+
+
+fourier_beer <- recent_production |>
+  model(TSLM(Beer ~ trend() + fourier(K = 2)))
+
+report(fourier_beer)
+
+
+# 7.5 Selecting predictors ------------------------------------------------
+
+
+glance(fit_consMR) |>
+  select(adj_r_squared, CV, AIC, AICc, BIC)
+
+
+# 7.6 Forecasting with regression -----------------------------------------
+
+recent_production <- aus_production |>
+  filter(year(Quarter) >= 1992) 
+
+fit_beer <- recent_production |>
+  model(TSLM(Beer ~ trend() + season()))
+
+fc_beer <- forecast(fit_beer)
+fc_beer |>
+  autoplot(recent_production) +
+  labs(
+    title = "Forecasts of beer production using regression",
+    y = "megaliters"
+  )
+
+fit_consBest <- us_change |>
+  model(
+    lm = TSLM(Consumption ~ Income + Savings + Unemployment)
+  )
+
+future_scenarios <- scenarios(
+  Increase = new_data(us_change, 4) |>
+    mutate(Income=1, Savings=0.5, Unemployment=0),
+  Decrease = new_data(us_change, 4) |>
+    mutate(Income=-1, Savings=-0.5, Unemployment=0),
+  names_to = "Scenario"
+)
+
+fc <- forecast(fit_consBest, new_data = future_scenarios)
+
+us_change |>
+  autoplot(Consumption) +
+  autolayer(fc) +
+  labs(title = "US consumptions", y = "% change")
